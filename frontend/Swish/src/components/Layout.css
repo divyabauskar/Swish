@@ -268,3 +268,158 @@ html, body {
 
   .create-icon { width: 34px; height: 34px; border-radius: 9px; }
 }
+
+
+
+
+
+.post-card{
+  background:#fff;
+  border-radius:18px;
+  overflow:hidden;
+  margin:22px 0;
+  box-shadow:0 8px 30px rgba(0,0,0,.08);
+}
+
+.post-header{
+  display:flex;
+  align-items:center;
+  gap:12px;
+  padding:14px;
+}
+
+.avatar{
+  width:45px;
+  height:45px;
+  border-radius:50%;
+  object-fit:cover;
+}
+
+.post-image{
+  width:100%;
+  height:420px;
+  object-fit:cover;
+}
+
+.post-content{
+  padding:14px;
+}
+
+.post-actions{
+  margin-top:10px;
+  font-weight:600;
+  color:#e11d48;
+}
+
+
+.profile-container {
+  max-width: 650px;
+  margin: 32px auto;
+  background: #ffffff;
+  border-radius: 20px;
+  padding: 32px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+}
+
+.profile-image {
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  object-fit: cover;
+  display: block;
+  margin: 0 auto;
+  border: 4px solid #ff6b6b;
+}
+
+.profile-container h2 {
+  text-align: center;
+  margin-top: 16px;
+  font-size: 28px;
+  font-weight: 700;
+}
+
+.username {
+  text-align: center;
+  color: #777;
+  margin-bottom: 24px;
+}
+
+.profile-info {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  font-size: 15px;
+  color: #333;
+}
+
+.edit-btn {
+  display: block;
+  margin-top: 28px;
+  text-align: center;
+  background: #ff6b6b;
+  color: white;
+  padding: 12px;
+  border-radius: 12px;
+  text-decoration: none;
+  font-weight: 600;
+  transition: 0.3s;
+}
+
+.edit-btn:hover {
+  background: #e85050;
+}
+
+
+/* ========== EDIT PROFILE ========== */
+
+.edit-form{
+  display:flex;
+  flex-direction:column;
+  gap:14px;
+  margin-top:20px;
+}
+
+.edit-form label{
+  font-weight:700;
+  color:#241E30;
+}
+
+.edit-form input,
+.edit-form textarea{
+  padding:12px;
+  border:1px solid #ddd;
+  border-radius:10px;
+  font-size:15px;
+  background:white;
+}
+
+.edit-form textarea{
+  resize:none;
+}
+
+.save-btn{
+  margin-top:10px;
+  padding:14px;
+  border:none;
+  border-radius:12px;
+  background:linear-gradient(135deg,#FF5C7A,#FF8F5A);
+  color:white;
+  font-size:16px;
+  font-weight:700;
+  cursor:pointer;
+}
+
+.save-btn:hover{
+  opacity:.95;
+}
+
+/* ========== CREATE POST ========== */
+
+.preview-image{
+  width:100%;
+  height:320px;
+  object-fit:cover;
+  border-radius:14px;
+  margin-top:8px;
+  border:1px solid #E7DDCF;
+}

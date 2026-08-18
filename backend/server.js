@@ -1,3 +1,6 @@
+  
+const confessionRoutes = require("./routes/confessionRoutes");
+
 require("dotenv").config();
 
 let express = require("express");
@@ -8,12 +11,20 @@ let jwt = require("jsonwebtoken");
 let { ObjectId } = require("mongodb");
 let { connectDB, getUserCollec } = require("./config/db");
 
+const postRoutes = require("./routes/postRoutes");
+const profileRoutes = require("./routes/profileRoutes");
+
 let app = express();
 let SECRET = process.env.JWT_SECRET;
 
+
+ 
 app.use(express.json());
 app.use(cookieParser());
 app.use(cors({ origin: "http://localhost:5173", credentials: true }));
+app.use("/api/profile", profileRoutes);
+app.use("/api/posts", postRoutes);
+app.use("/api/confessions", confessionRoutes);
 
 function auth(req, res, next) {
   let token = req.cookies.token;
@@ -43,9 +54,27 @@ function requireFacultyOrAdmin(req, res, next) {
 app.post("/register", async (req, res) => {
   try {
     const userCollec = getUserCollec();
-    req.body.password = bcrypt.hashSync(req.body.password, 10);
-    req.body.accountStatus = req.body.role === "Faculty" ? "pending" : "active";
-    await userCollec.insertOne(req.body);
+
+    const newUser = {
+      ...req.body,
+      password: bcrypt.hashSync(req.body.password, 10),
+
+      accountStatus:
+        req.body.role === "Faculty" ? "pending" : "active",
+
+      bio: "",
+      college: "",
+      course: "",
+      profilePicture: "",
+
+      followers: [],
+      following: [],
+
+      createdAt: new Date(),
+    };
+
+    await userCollec.insertOne(newUser);
+
     res.send("Signup successful");
   } catch (err) {
     res.status(500).send(err.message);
@@ -193,3 +222,5 @@ connectDB()
     console.error("Failed to connect to MongoDB:", err.message);
     process.exit(1);
   });
+
+ 
