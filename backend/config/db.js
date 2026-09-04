@@ -6,8 +6,10 @@ let db;
 
 async function connectDB() {
   await client.connect();
-  db = client.db("Swish"); 
+  db = client.db("Swish");
   console.log("MongoDB connected successfully");
+
+  await db.collection("posts").createIndex({ createdAt: -1 });
 }
 
 function getUserCollec() {
@@ -15,4 +17,9 @@ function getUserCollec() {
   return db.collection("users");
 }
 
-module.exports = { connectDB, getUserCollec };
+function getPostCollec() {
+  if (!db) throw new Error("Database not connected yet");
+  return db.collection("posts");
+}
+
+module.exports = { connectDB, getUserCollec, getPostCollec };

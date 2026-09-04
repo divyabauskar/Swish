@@ -1,0 +1,299 @@
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,600;0,700;1,600&family=Manrope:wght@400;500;600;700&display=swap');
+
+.myposts-container {
+  min-height: 100vh;
+  background: #FDF6EC;
+  font-family: 'Manrope', sans-serif;
+  padding: 20px 20px 60px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.myposts-header {
+  width: 100%;
+  max-width: 480px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 24px;
+}
+
+.back-btn {
+  background: none;
+  border: none;
+  font-size: 15px;
+  font-weight: 700;
+  color: #FF5C7A;
+  cursor: pointer;
+  padding: 6px 10px;
+}
+
+.myposts-header h2 {
+  font-family: 'Fraunces', serif;
+  font-weight: 700;
+  font-size: 24px;
+  color: #241E30;
+  margin: 0;
+}
+
+.no-posts-text {
+  color: #8C8494;
+  font-size: 14px;
+  text-align: center;
+  margin-top: 60px;
+}
+
+.myposts-feed {
+  width: 100%;
+  max-width: 480px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+/* ---------- Instagram-style Post Card ---------- */
+.ig-post {
+  background: #fff;
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 8px 24px rgba(36, 30, 48, 0.08);
+}
+
+.ig-post-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+}
+
+.ig-avatar {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.ig-avatar-placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #FF5C7A, #FFB347);
+  color: #fff;
+  font-family: 'Fraunces', serif;
+  font-weight: 700;
+  font-size: 15px;
+}
+
+.ig-header-text { display: flex; flex-direction: column; }
+
+.ig-username {
+  font-weight: 700;
+  font-size: 13.5px;
+  color: #241E30;
+  margin: 0;
+}
+
+.ig-location {
+  font-size: 11.5px;
+  color: #6B6478;
+  margin: 1px 0 0;
+}
+
+.ig-image-scroll {
+  display: flex;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  scrollbar-width: none;
+}
+
+.ig-image-scroll::-webkit-scrollbar { display: none; }
+
+.ig-image {
+  width: 100%;
+  flex-shrink: 0;
+  scroll-snap-align: start;
+  aspect-ratio: 1 / 1;
+  object-fit: cover;
+  background: #EDE3D6;
+}
+
+.ig-post-body {
+  padding: 12px 16px 16px;
+}
+
+.ig-song {
+  font-size: 12px;
+  color: #6B6478;
+  margin: 0 0 8px;
+}
+
+.ig-caption {
+  font-size: 13.5px;
+  color: #241E30;
+  line-height: 1.5;
+  margin: 0 0 8px;
+}
+
+.ig-caption strong {
+  font-weight: 700;
+  margin-right: 4px;
+}
+
+.ig-poll {
+  background: #FDF6EC;
+  border-radius: 10px;
+  padding: 12px;
+  margin-bottom: 8px;
+}
+
+.ig-poll-question {
+  font-size: 12.5px;
+  font-weight: 700;
+  color: #241E30;
+  margin: 0 0 8px;
+}
+
+.ig-poll-options { display: flex; gap: 8px; }
+
+.ig-poll-chip {
+  padding: 5px 14px;
+  border-radius: 20px;
+  background: #FFF1EB;
+  color: #FF5C7A;
+  font-size: 11.5px;
+  font-weight: 700;
+}
+
+.ig-timestamp {
+  font-size: 10.5px;
+  color: #A79C8C;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin: 0;
+}
+
+/* ---------- WhatsApp-style Poll ---------- */
+.wa-poll {
+  background: #FDF6EC;
+  border: 1px solid #F0E6D8;
+  border-radius: 14px;
+  padding: 14px;
+  margin-bottom: 10px;
+}
+
+.wa-poll-question {
+  font-size: 13.5px;
+  font-weight: 700;
+  color: #241E30;
+  margin: 0 0 12px;
+  line-height: 1.4;
+}
+
+.wa-poll-options {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.wa-poll-option {
+  position: relative;
+  background: #fff;
+  border: 1.5px solid #EDE3D6;
+  border-radius: 10px;
+  padding: 10px 14px;
+  cursor: pointer;
+  overflow: hidden;
+  transition: border-color 0.15s ease;
+}
+
+.wa-poll-option:hover {
+  border-color: #FFB347;
+}
+
+.wa-poll-voted {
+  cursor: default;
+}
+
+.wa-poll-selected {
+  border-color: #0E7C7B;
+}
+
+.wa-poll-fill {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  background: rgba(14, 124, 123, 0.1);
+  transition: width 0.4s ease;
+  z-index: 0;
+}
+
+.wa-poll-option-content {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.wa-poll-radio {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: 2px solid #C9BFA8;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.wa-poll-selected .wa-poll-radio {
+  border-color: #0E7C7B;
+}
+
+.wa-poll-radio-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: #0E7C7B;
+}
+
+.wa-poll-option-text {
+  flex: 1;
+  font-size: 13.5px;
+  color: #241E30;
+  font-weight: 500;
+}
+
+.wa-poll-percent {
+  font-size: 12.5px;
+  font-weight: 700;
+  color: #0E7C7B;
+}
+
+.wa-poll-footer {
+  font-size: 11px;
+  color: #A79C8C;
+  margin: 10px 0 0;
+  text-align: center;
+}
+
+.drive-link-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  margin-bottom: 10px;
+  background: #FFF1EB;
+  color: #FF5C7A;
+  border-radius: 20px;
+  font-size: 12.5px;
+  font-weight: 700;
+  text-decoration: none;
+  transition: background 0.15s ease;
+}
+
+.drive-link-btn:hover {
+  background: #FFE3D6;
+}
