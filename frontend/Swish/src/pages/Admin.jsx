@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import axios from 'axios';
 import './AdminDashboard.css';
 
@@ -58,6 +59,9 @@ function AdminDashboard() {
   return (
     <div className="admin-dashboard">
       <h1>Admin Dashboard</h1>
+            <Link to="/admin-posts" className="manage-posts-btn">
+        Manage Posts
+      </Link>
 
       <section>
         <h2>Students</h2>

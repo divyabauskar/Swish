@@ -12,18 +12,45 @@ const MyPosts = () => {
   const [votedPolls, setVotedPolls] = useState({});
   const [toast, setToast] = useState('');
 
+  // ---- Like state ----
+  const [likedPosts, setLikedPosts] = useState({});
+  const [likeCounts, setLikeCounts] = useState({});
+
+  // ---- Comment state ----
+  const [commentsByPost, setCommentsByPost] = useState({});
+  const [commentDrafts, setCommentDrafts] = useState({});
+  const [expandedComments, setExpandedComments] = useState({});
+
   useEffect(() => {
     let isMounted = true;
+    let profileData = null;
 
     axios
       .get('http://localhost:3000/profile', { withCredentials: true })
       .then((profileRes) => {
         if (!isMounted) return;
+        profileData = profileRes.data;
         setProfile(profileRes.data);
         return axios.get('http://localhost:3000/post', { withCredentials: true });
       })
       .then((postsRes) => {
         if (!isMounted || !postsRes) return;
+
+        const initialLiked = {};
+        const initialCounts = {};
+        const initialComments = {};
+
+        postsRes.data.forEach((p) => {
+          initialLiked[p._id] = (p.likes || []).some(
+            (id) => id === profileData._id || id?.toString?.() === profileData._id
+          );
+          initialCounts[p._id] = p.likes?.length || 0;
+          initialComments[p._id] = p.comments || [];
+        });
+
+        setLikedPosts(initialLiked);
+        setLikeCounts(initialCounts);
+        setCommentsByPost(initialComments);
         setPosts(postsRes.data);
       })
       .catch((err) => console.error('Error loading posts:', err))
@@ -69,6 +96,65 @@ const MyPosts = () => {
     setVotedPolls((prev) => ({ ...prev, [postId]: optionIndex }));
   };
 
+  // ---- Like handler ----
+  const handleLikeToggle = (postId) => {
+    const isLiked = !!likedPosts[postId];
+
+    setLikedPosts((prev) => ({ ...prev, [postId]: !isLiked }));
+    setLikeCounts((prev) => {
+      const current = prev[postId] || 0;
+      return { ...prev, [postId]: isLiked ? Math.max(current - 1, 0) : current + 1 };
+    });
+
+    axios
+      .patch(`http://localhost:3000/post/${postId}/like`, {}, { withCredentials: true })
+      .catch((err) => {
+        console.error('Error toggling like:', err);
+        setLikedPosts((prev) => ({ ...prev, [postId]: isLiked }));
+        setLikeCounts((prev) => ({ ...prev, [postId]: prev[postId] }));
+      });
+  };
+
+  // ---- Comment handlers ----
+  const handleCommentDraftChange = (postId, value) => {
+    setCommentDrafts((prev) => ({ ...prev, [postId]: value }));
+  };
+
+  const handleCommentSubmit = (postId) => {
+    const text = (commentDrafts[postId] || '').trim();
+    if (!text) return;
+
+    setCommentDrafts((prev) => ({ ...prev, [postId]: '' }));
+    setExpandedComments((prev) => ({ ...prev, [postId]: true }));
+
+    axios
+      .post(`http://localhost:3000/post/${postId}/comment`, { text }, { withCredentials: true })
+      .then((res) => {
+        setCommentsByPost((prev) => ({
+          ...prev,
+          [postId]: [...(prev[postId] || []), res.data],
+        }));
+      })
+      .catch((err) => console.error('Error posting comment:', err));
+  };
+
+  const handleCommentDelete = (postId, commentId) => {
+    if (!commentId) return;
+
+    setCommentsByPost((prev) => ({
+      ...prev,
+      [postId]: (prev[postId] || []).filter((c) => c._id !== commentId),
+    }));
+
+    axios
+      .delete(`http://localhost:3000/post/${postId}/comment/${commentId}`, { withCredentials: true })
+      .catch((err) => console.error('Error deleting comment:', err));
+  };
+
+  const toggleExpandComments = (postId) => {
+    setExpandedComments((prev) => ({ ...prev, [postId]: !prev[postId] }));
+  };
+
   if (loading) {
     return (
       <div className="myposts-container">
@@ -109,6 +195,12 @@ const MyPosts = () => {
             const pollOptions = post.poll?.options || [];
             const totalOptions = pollOptions.length || 1;
             const basePercent = Math.floor(100 / totalOptions);
+
+            const isLiked = !!likedPosts[post._id];
+            const likeCount = likeCounts[post._id] || 0;
+            const comments = commentsByPost[post._id] || [];
+            const isExpanded = !!expandedComments[post._id];
+            const draft = commentDrafts[post._id] || '';
 
             return (
               <div className="ig-post" key={post._id} onClick={() => setOpenMenuId(null)}>
@@ -160,6 +252,35 @@ const MyPosts = () => {
                       <img key={idx} src={img} alt="" className="ig-image" />
                     ))}
                   </div>
+                )}
+
+                {/* ---------- Like & Comment action bar ---------- */}
+                <div className="ig-actions" onClick={(e) => e.stopPropagation()}>
+                  <button
+                    type="button"
+                    className={`ig-action-btn ig-like-btn ${isLiked ? 'liked' : ''}`}
+                    onClick={() => handleLikeToggle(post._id)}
+                  >
+                    <span>{isLiked ? '❤️' : '🤍'}</span>
+                    {likeCount > 0 && <span className="ig-action-count">{likeCount}</span>}
+                  </button>
+
+                  <button
+                    type="button"
+                    className="ig-action-btn ig-comment-btn"
+                    onClick={() => toggleExpandComments(post._id)}
+                  >
+                    <span>💬</span>
+                    {comments.length > 0 && (
+                      <span className="ig-action-count">{comments.length}</span>
+                    )}
+                  </button>
+                </div>
+
+                {likeCount > 0 && (
+                  <p className="ig-likes-count">
+                    {likeCount} {likeCount === 1 ? 'like' : 'likes'}
+                  </p>
                 )}
 
                 <div className="ig-post-body">
@@ -229,6 +350,68 @@ const MyPosts = () => {
                       year: 'numeric',
                     })}
                   </p>
+                </div>
+
+                {/* ---------- Comments section ---------- */}
+                <div onClick={(e) => e.stopPropagation()}>
+                  {comments.length > 0 && !isExpanded && (
+                    <button
+                      type="button"
+                      className="ig-view-comments"
+                      onClick={() => toggleExpandComments(post._id)}
+                    >
+                      View {comments.length === 1 ? 'the' : `all ${comments.length}`} comment
+                      {comments.length === 1 ? '' : 's'}
+                    </button>
+                  )}
+
+                  {isExpanded && comments.length > 0 && (
+                    <div className="ig-comment-list">
+                      {comments.map((c, idx) => {
+                        const commentIdStr = c._id?.toString?.() || c._id;
+                        const authorIdStr = c.authorId?.toString?.() || c.authorId;
+                        const canDelete =
+                          commentIdStr &&
+                          (authorIdStr === profile._id || post.authorId === profile._id);
+
+                        return (
+                          <p className="ig-comment-item" key={commentIdStr || idx}>
+                            <strong>{c.authorName}</strong>
+                            {c.text}
+                            {canDelete && (
+                              <button
+                                type="button"
+                                className="ig-comment-delete"
+                                onClick={() => handleCommentDelete(post._id, commentIdStr)}
+                              >
+                                ✕
+                              </button>
+                            )}
+                          </p>
+                        );
+                      })}
+                    </div>
+                  )}
+
+                  <div className="ig-comment-input-row">
+                    <input
+                      type="text"
+                      className="ig-comment-input"
+                      placeholder="Add a comment..."
+                      value={draft}
+                      onChange={(e) => handleCommentDraftChange(post._id, e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') handleCommentSubmit(post._id);
+                      }}
+                    />
+                    <button
+                      type="button"
+                      className={`ig-comment-post-btn ${draft.trim() ? 'active' : ''}`}
+                      onClick={() => handleCommentSubmit(post._id)}
+                    >
+                      Post
+                    </button>
+                  </div>
                 </div>
               </div>
             );

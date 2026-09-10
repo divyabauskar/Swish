@@ -175,3 +175,21 @@
     padding: 20px;
   }
 }
+
+.manage-posts-btn {
+  display: inline-block;
+  background: #241E30;
+  color: #fff;
+  font-weight: 700;
+  font-size: 14px;
+  padding: 10px 20px;
+  border-radius: 8px;
+  text-decoration: none;
+  margin-bottom: 20px;
+  transition: background 0.15s ease;
+}
+
+.manage-posts-btn:hover {
+  background: #3a3050;
+  color: #fff;
+}

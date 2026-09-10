@@ -297,3 +297,145 @@
 .drive-link-btn:hover {
   background: #FFE3D6;
 }
+
+/* ---------- Like & Comment Actions ---------- */
+.ig-actions {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  padding: 10px 16px 2px;
+}
+
+.ig-action-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 2px;
+  font-size: 20px;
+  line-height: 1;
+  color: #241E30;
+  transition: transform 0.12s ease;
+}
+
+.ig-action-btn:active {
+  transform: scale(0.9);
+}
+
+.ig-action-count {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: #6B6478;
+}
+
+.ig-like-btn.liked {
+  color: #FF5C7A;
+}
+
+.ig-likes-count {
+  font-size: 13px;
+  font-weight: 700;
+  color: #241E30;
+  padding: 6px 16px 0;
+  margin: 0;
+}
+
+.ig-view-comments {
+  font-size: 12.5px;
+  color: #8C8494;
+  padding: 4px 16px 0;
+  margin: 0;
+  cursor: pointer;
+  background: none;
+  border: none;
+  text-align: left;
+}
+
+.ig-comment-list {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  padding: 6px 16px 0;
+}
+
+.ig-comment-item {
+  font-size: 13px;
+  color: #241E30;
+  line-height: 1.4;
+  margin: 0;
+}
+
+.ig-comment-item strong {
+  font-weight: 700;
+  margin-right: 5px;
+}
+
+.ig-comment-input-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 16px 4px;
+  margin-top: 6px;
+  border-top: 1px solid #F0E6D8;
+}
+
+.ig-comment-input {
+  flex: 1;
+  border: none;
+  outline: none;
+  background: transparent;
+  font-family: 'Manrope', sans-serif;
+  font-size: 13px;
+  color: #241E30;
+  padding: 6px 0;
+}
+
+.ig-comment-input::placeholder {
+  color: #A79C8C;
+}
+
+.ig-comment-post-btn {
+  background: none;
+  border: none;
+  color: #FF5C7A;
+  font-weight: 700;
+  font-size: 13px;
+  cursor: pointer;
+  opacity: 0.4;
+  pointer-events: none;
+}
+
+.ig-comment-post-btn.active {
+  opacity: 1;
+  pointer-events: auto;
+  cursor: pointer;
+}
+
+.ig-comment-delete {
+  background: none;
+  border: none;
+  color: #A79C8C;
+  font-size: 11px;
+  cursor: pointer;
+  margin-left: 6px;
+  padding: 0;
+}
+
+.ig-comment-delete:hover {
+  color: #FF5C7A;
+}
+
+/* ---------- Admin Posts page ---------- */
+.admin-archived-badge {
+  margin-left: auto;
+  background: #F0E6D8;
+  color: #8C8494;
+  font-size: 10.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  padding: 4px 10px;
+  border-radius: 20px;
+}

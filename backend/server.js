@@ -297,6 +297,93 @@ app.patch(["/archivePost/:id", "/post/:id/archive"], auth, async (req, res) => {
   }
 });
 
+app.patch("/post/:id/like", auth, async (req, res) => {
+  try {
+    const postCollec = getPostCollec();
+    const postId = new ObjectId(req.params.id);
+    const userId = new ObjectId(req.user.id);
+
+    const post = await postCollec.findOne({ _id: postId });
+    if (!post) return res.status(404).send("Post not found");
+
+    const likes = post.likes || [];
+    const alreadyLiked = likes.some((id) => id.toString() === req.user.id);
+
+    if (alreadyLiked) {
+      await postCollec.updateOne({ _id: postId }, { $pull: { likes: userId } });
+    } else {
+      await postCollec.updateOne({ _id: postId }, { $addToSet: { likes: userId } });
+    }
+
+    const updated = await postCollec.findOne({ _id: postId });
+    res.send({ liked: !alreadyLiked, likeCount: updated.likes?.length || 0 });
+  } catch (err) {
+    res.status(500).send(err.message);
+  }
+});
+
+app.post("/post/:id/comment", auth, async (req, res) => {
+  try {
+    const postCollec = getPostCollec();
+    const userCollec = getUserCollec();
+    const postId = new ObjectId(req.params.id);
+
+    const text = req.body.text?.trim();
+    if (!text) return res.status(400).send("Comment text is required");
+
+    const authorUser = await userCollec.findOne({ _id: new ObjectId(req.user.id) });
+
+    const newComment = {
+      _id: new ObjectId(),
+      authorId: new ObjectId(req.user.id),
+      authorName: authorUser?.fullname || "Campus User",
+      text,
+      createdAt: new Date(),
+    };
+
+    await postCollec.updateOne({ _id: postId }, { $push: { comments: newComment } });
+    res.status(201).send(newComment);
+  } catch (err) {
+    res.status(500).send(err.message);
+  }
+});
+
+app.delete("/post/:postId/comment/:commentId", auth, async (req, res) => {
+  try {
+    const postCollec = getPostCollec();
+    const postId = new ObjectId(req.params.postId);
+    const commentId = new ObjectId(req.params.commentId);
+
+    const post = await postCollec.findOne({ _id: postId });
+    if (!post) return res.status(404).send("Post not found");
+
+    const comment = (post.comments || []).find((c) => c._id?.toString() === req.params.commentId);
+    if (!comment) return res.status(404).send("Comment not found");
+
+    const isCommentAuthor = comment.authorId?.toString() === req.user.id;
+    const isPostAuthor = post.authorId?.toString() === req.user.id;
+    const isAdmin = req.user.role === "Admin";
+    if (!isCommentAuthor && !isPostAuthor && !isAdmin) {
+      return res.status(403).send("Not authorized to delete this comment");
+    }
+
+    await postCollec.updateOne({ _id: postId }, { $pull: { comments: { _id: commentId } } });
+    res.send("Comment deleted");
+  } catch (err) {
+    res.status(500).send(err.message);
+  }
+});
+
+app.get("/admin/posts", auth, requireAdmin, async (req, res) => {
+  try {
+    const postCollec = getPostCollec();
+    const posts = await postCollec.find({}).sort({ createdAt: -1 }).toArray();
+    res.send(posts);
+  } catch (err) {
+    res.status(500).send(err.message);
+  }
+});
+
 connectDB()
   .then(() => {
     app.listen(3000, () => console.log("Server running on 3000"));
