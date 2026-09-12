@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import './MyPosts.css';
+import { getErrorMessage } from '../utils/getErrorMessage';
 
 const MyPosts = () => {
   const nav = useNavigate();
@@ -10,13 +11,11 @@ const MyPosts = () => {
   const [loading, setLoading] = useState(true);
   const [openMenuId, setOpenMenuId] = useState(null);
   const [votedPolls, setVotedPolls] = useState({});
-  const [toast, setToast] = useState('');
+  const [toast, setToast] = useState({ message: '', type: '' });
 
-  // ---- Like state ----
   const [likedPosts, setLikedPosts] = useState({});
   const [likeCounts, setLikeCounts] = useState({});
 
-  // ---- Comment state ----
   const [commentsByPost, setCommentsByPost] = useState({});
   const [commentDrafts, setCommentDrafts] = useState({});
   const [expandedComments, setExpandedComments] = useState({});
@@ -53,7 +52,10 @@ const MyPosts = () => {
         setCommentsByPost(initialComments);
         setPosts(postsRes.data);
       })
-      .catch((err) => console.error('Error loading posts:', err))
+      .catch((err) => {
+        console.error('Error loading posts:', err);
+        if (isMounted) showToast(getErrorMessage(err), 'error');
+      })
       .finally(() => {
         if (isMounted) setLoading(false);
       });
@@ -63,9 +65,9 @@ const MyPosts = () => {
     };
   }, []);
 
-  const showToast = (message) => {
-    setToast(message);
-    setTimeout(() => setToast(''), 3000);
+  const showToast = (message, type = 'success') => {
+    setToast({ message, type });
+    setTimeout(() => setToast({ message: '', type: '' }), 3000);
   };
 
   const handleDelete = (postId) => {
@@ -76,9 +78,9 @@ const MyPosts = () => {
       .then(() => {
         setPosts((prev) => prev.filter((p) => p._id !== postId));
         setOpenMenuId(null);
-        showToast('Post deleted');
+        showToast('Post deleted', 'success');
       })
-      .catch((err) => alert(err.response?.data || err.message));
+      .catch((err) => showToast(getErrorMessage(err), 'error'));
   };
 
   const handleArchive = (postId) => {
@@ -87,16 +89,15 @@ const MyPosts = () => {
       .then(() => {
         setPosts((prev) => prev.filter((p) => p._id !== postId));
         setOpenMenuId(null);
-        showToast('Post archived');
+        showToast('Post archived', 'success');
       })
-      .catch((err) => alert(err.response?.data || err.message));
+      .catch((err) => showToast(getErrorMessage(err), 'error'));
   };
 
   const handleVote = (postId, optionIndex) => {
     setVotedPolls((prev) => ({ ...prev, [postId]: optionIndex }));
   };
 
-  // ---- Like handler ----
   const handleLikeToggle = (postId) => {
     const isLiked = !!likedPosts[postId];
 
@@ -111,11 +112,14 @@ const MyPosts = () => {
       .catch((err) => {
         console.error('Error toggling like:', err);
         setLikedPosts((prev) => ({ ...prev, [postId]: isLiked }));
-        setLikeCounts((prev) => ({ ...prev, [postId]: prev[postId] }));
+        setLikeCounts((prev) => {
+          const current = prev[postId] || 0;
+          return { ...prev, [postId]: isLiked ? current + 1 : Math.max(current - 1, 0) };
+        });
+        showToast(getErrorMessage(err), 'error');
       });
   };
 
-  // ---- Comment handlers ----
   const handleCommentDraftChange = (postId, value) => {
     setCommentDrafts((prev) => ({ ...prev, [postId]: value }));
   };
@@ -135,7 +139,10 @@ const MyPosts = () => {
           [postId]: [...(prev[postId] || []), res.data],
         }));
       })
-      .catch((err) => console.error('Error posting comment:', err));
+      .catch((err) => {
+        console.error('Error posting comment:', err);
+        showToast(getErrorMessage(err), 'error');
+      });
   };
 
   const handleCommentDelete = (postId, commentId) => {
@@ -148,7 +155,10 @@ const MyPosts = () => {
 
     axios
       .delete(`http://localhost:3000/post/${postId}/comment/${commentId}`, { withCredentials: true })
-      .catch((err) => console.error('Error deleting comment:', err));
+      .catch((err) => {
+        console.error('Error deleting comment:', err);
+        showToast(getErrorMessage(err), 'error');
+      });
   };
 
   const toggleExpandComments = (postId) => {
@@ -183,7 +193,11 @@ const MyPosts = () => {
         <h2>My Posts</h2>
       </div>
 
-      {toast && <div className="post-toast">{toast}</div>}
+      {toast.message && (
+        <div className={`post-toast ${toast.type === 'error' ? 'post-toast-error' : 'post-toast-success'}`}>
+          {toast.message}
+        </div>
+      )}
 
       {myPosts.length === 0 ? (
         <p className="no-posts-text">You haven't posted anything yet.</p>
@@ -254,7 +268,6 @@ const MyPosts = () => {
                   </div>
                 )}
 
-                {/* ---------- Like & Comment action bar ---------- */}
                 <div className="ig-actions" onClick={(e) => e.stopPropagation()}>
                   <button
                     type="button"
@@ -286,17 +299,18 @@ const MyPosts = () => {
                 <div className="ig-post-body">
                   {post.song && <p className="ig-song">🎵 {post.song}</p>}
 
-                  {post.driveLink && (
-                    <a
-                      href={post.driveLink}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="drive-link-btn"
-                      onClick={(e) => e.stopPropagation()}
-                    >
-                      📁 Upload Your Event Photos
-                    </a>
-                  )}
+                 {post.driveLink && (
+                     <button
+                            type="button"
+                            className="drive-link-btn"
+                            onClick={(e) => {
+                            e.stopPropagation();
+                            window.open(post.driveLink, '_blank', 'noopener,noreferrer');
+                }}
+                         >
+                        📁 Upload Your Event Photos
+                     </button>
+                    )}
 
                   <p className="ig-caption">
                     <strong>{post.authorName}</strong> {post.caption}
@@ -352,7 +366,6 @@ const MyPosts = () => {
                   </p>
                 </div>
 
-                {/* ---------- Comments section ---------- */}
                 <div onClick={(e) => e.stopPropagation()}>
                   {comments.length > 0 && !isExpanded && (
                     <button

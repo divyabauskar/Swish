@@ -439,3 +439,23 @@
   padding: 4px 10px;
   border-radius: 20px;
 }
+
+.post-toast-success {
+  background: #241E30;
+  color: #fff;
+}
+
+.post-toast-error {
+  background: #C4294D;
+  color: #fff;
+}
+
+.post-toast-success {
+  background: #241E30;
+  color: #fff;
+}
+
+.post-toast-error {
+  background: #C4294D;
+  color: #fff;
+}

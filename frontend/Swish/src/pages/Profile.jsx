@@ -2,12 +2,14 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import './Profile.css';
+import { getErrorMessage } from '../utils/getErrorMessage';
 
 const ShowProfile = () => {
   const nav = useNavigate();
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
+  const [toast, setToast] = useState({ message: '', type: '' });
 
   const [fullName, setFullName] = useState('');
   const [department, setDepartment] = useState('');
@@ -16,12 +18,18 @@ const ShowProfile = () => {
   const [profilePhoto, setProfilePhoto] = useState('');
   const [postCount, setPostCount] = useState(0);
 
+  const showToast = (message, type = 'success') => {
+    setToast({ message, type });
+    setTimeout(() => setToast({ message: '', type: '' }), 3000);
+  };
+
   const fetchProfile = async () => {
     try {
       const res = await axios.get('http://localhost:3000/profile', { withCredentials: true });
       setProfile(res.data);
     } catch (err) {
       console.error('Error fetching profile:', err);
+      showToast(getErrorMessage(err), 'error');
     } finally {
       setLoading(false);
     }
@@ -38,7 +46,10 @@ const ShowProfile = () => {
         const count = res.data.filter((p) => p.authorId === profile._id).length;
         setPostCount(count);
       })
-      .catch((err) => console.error('Error fetching post count:', err));
+      .catch((err) => {
+        console.error('Error fetching post count:', err);
+        showToast(getErrorMessage(err), 'error');
+      });
   }, [profile]);
 
   const openModal = () => {
@@ -57,7 +68,7 @@ const ShowProfile = () => {
     const file = e.target.files?.[0];
     if (!file) return;
     if (file.size > 1024 * 1024) {
-      alert('Please choose an image smaller than 1MB');
+      showToast('Please choose an image smaller than 1MB', 'error');
       e.target.value = '';
       return;
     }
@@ -81,13 +92,9 @@ const ShowProfile = () => {
       await axios.patch('http://localhost:3000/profile/update', updates, { withCredentials: true });
       await fetchProfile();
       closeModal();
+      showToast('Profile updated successfully', 'success');
     } catch (err) {
-      const errorMsg =
-        err.response?.data?.message ||
-        (typeof err.response?.data === 'string' ? err.response.data : null) ||
-        err.message ||
-        'An error occurred while updating profile';
-      alert(errorMsg);
+      showToast(getErrorMessage(err), 'error');
     }
   };
 
@@ -103,6 +110,12 @@ const ShowProfile = () => {
 
   return (
     <div className="profile-container">
+      {toast.message && (
+        <div className={`profile-toast ${toast.type === 'error' ? 'profile-toast-error' : 'profile-toast-success'}`}>
+          {toast.message}
+        </div>
+      )}
+
       <div className="profile-card">
         <div className="profile-avatar-wrap">
           {profile.profilePhoto ? (
@@ -137,7 +150,6 @@ const ShowProfile = () => {
           Followers: {profile.followerCount || 0} &nbsp;|&nbsp; Following: {profile.followingCount || 0}
         </p>
 
-        {/* My Posts navigation link, as its own distinct section */}
         <button type="button" className="my-posts-link" onClick={() => nav('/my-posts')}>
           <span className="my-posts-link-left">
             <span className="my-posts-icon">▦</span>

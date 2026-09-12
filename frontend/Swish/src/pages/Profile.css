@@ -476,3 +476,32 @@
   font-size: 16px;
   color: #A79C8C;
 }
+
+.profile-toast {
+  position: fixed;
+  top: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 12px 24px;
+  border-radius: 30px;
+  font-size: 13.5px;
+  font-weight: 600;
+  box-shadow: 0 10px 30px rgba(36, 30, 48, 0.25);
+  z-index: 300;
+  animation: toastSlideDown 0.3s ease;
+}
+
+.profile-toast-success {
+  background: #241E30;
+  color: #fff;
+}
+
+.profile-toast-error {
+  background: #C4294D;
+  color: #fff;
+}
+
+@keyframes toastSlideDown {
+  from { opacity: 0; transform: translate(-50%, -10px); }
+  to { opacity: 1; transform: translate(-50%, 0); }
+}
