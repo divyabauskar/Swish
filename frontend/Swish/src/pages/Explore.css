@@ -1,0 +1,211 @@
+/* ==========================================
+   EXPLORE PAGE STYLES
+   ========================================== */
+
+.explore-header {
+  margin-bottom: 20px;
+}
+
+/* ---------- Profiles Discovery Section ---------- */
+.explore-profiles-section {
+  background: #FFFFFF;
+  border: 1.5px solid #F0E6D8;
+  border-radius: 16px;
+  padding: 16px 18px;
+  margin-bottom: 24px;
+  box-shadow: 0 4px 16px rgba(36, 30, 48, 0.04);
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 100%;
+}
+
+.explore-section-title-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 14px;
+}
+
+.explore-section-title {
+  font-family: 'Fraunces', serif;
+  font-size: 17px;
+  font-weight: 700;
+  color: #241E30;
+  margin: 0;
+}
+
+.explore-profiles-scroll {
+  display: flex;
+  gap: 14px;
+  overflow-x: auto;
+  padding-bottom: 8px;
+  scrollbar-width: thin;
+  -webkit-overflow-scrolling: touch;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+.explore-profile-card {
+  flex: 0 0 160px;
+  background: #FAF7F2;
+  border: 1px solid #EDE3D6;
+  border-radius: 14px;
+  padding: 14px 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.explore-profile-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 18px rgba(36, 30, 48, 0.08);
+}
+
+.explore-profile-avatar-wrap {
+  position: relative;
+  margin-bottom: 10px;
+  cursor: pointer;
+}
+
+.explore-profile-avatar {
+  width: 58px;
+  height: 58px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid #FFFFFF;
+  box-shadow: 0 3px 8px rgba(36, 30, 48, 0.12);
+}
+
+.explore-profile-avatar-placeholder {
+  width: 58px;
+  height: 58px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #FFB347, #FF5C7A);
+  color: #FFFFFF;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Fraunces', serif;
+  font-size: 22px;
+  font-weight: 700;
+  border: 2px solid #FFFFFF;
+  box-shadow: 0 3px 8px rgba(36, 30, 48, 0.12);
+}
+
+.explore-profile-name {
+  font-family: 'Fraunces', serif;
+  font-size: 14px;
+  font-weight: 700;
+  color: #241E30;
+  margin: 0 0 2px 0;
+  cursor: pointer;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 135px;
+}
+
+.explore-profile-name:hover {
+  color: #FF5C7A;
+}
+
+.explore-profile-dept {
+  font-size: 11.5px;
+  color: #8C8494;
+  margin: 0 0 8px 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 135px;
+}
+
+.explore-profile-stats {
+  font-size: 11px;
+  font-weight: 600;
+  color: #6B6478;
+  margin-bottom: 10px;
+}
+
+/* Discovery follow buttons */
+.btn-explore-follow {
+  width: 100%;
+  padding: 6px 12px;
+  border-radius: 8px;
+  border: none;
+  background: linear-gradient(120deg, #FF5C7A, #FFB347);
+  color: #241E30;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: opacity 0.2s ease, transform 0.15s ease;
+}
+
+.btn-explore-follow:hover {
+  opacity: 0.92;
+  transform: scale(1.02);
+}
+
+.btn-explore-requested {
+  width: 100%;
+  padding: 6px 12px;
+  border-radius: 8px;
+  border: 1px solid #FFB347;
+  background: #FFF8F0;
+  color: #C07020;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.btn-explore-following {
+  width: 100%;
+  padding: 6px 12px;
+  border-radius: 8px;
+  border: 1px solid #EDE3D6;
+  background: #FFFFFF;
+  color: #241E30;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.btn-explore-following:hover {
+  background: #FDF1F1;
+  color: #D32F2F;
+  border-color: #FF8899;
+}
+
+.btn-explore-follow-back {
+  width: 100%;
+  padding: 6px 12px;
+  border-radius: 8px;
+  border: none;
+  background: linear-gradient(120deg, #8A4FFF, #FF5C7A);
+  color: #FFFFFF;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: opacity 0.2s ease, transform 0.15s ease;
+}
+
+.btn-explore-follow-back:hover {
+  opacity: 0.92;
+  transform: scale(1.02);
+}
+
+/* Post Trend Badges */
+.post-trend-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: #FFF3EC;
+  border: 1px solid #FFD9C6;
+  color: #D44824;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 999px;
+  margin-left: auto;
+}

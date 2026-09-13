@@ -7,6 +7,8 @@ import Home from './pages/Home';
 import Profile from './pages/Profile';
 import Post from './pages/Post';  
 import MyPosts from './pages/MyPosts';
+import Explore from './pages/Explore';
+import Search from './pages/Search';
 
 function App() {
   return (
@@ -18,7 +20,10 @@ function App() {
         <Route path="/admin-dashboard" element={<Admin />} />
         <Route path="/admin-posts" element={<AdminPosts />} />
         <Route path="/home" element={<Home/>}/>
+        <Route path="/explore" element={<Explore />} />
+        <Route path="/search" element={<Search />} />
         <Route path="/profile" element={<Profile />} />
+        <Route path="/profile/:userId" element={<Profile />} />
         <Route path="/create" element={<Post />} />
         <Route path="/my-posts" element={<MyPosts />} />
       </Routes>
