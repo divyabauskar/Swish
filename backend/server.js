@@ -384,6 +384,37 @@ app.get("/admin/posts", auth, requireAdmin, async (req, res) => {
   }
 });
 
+app.patch("/post/:id/vote", auth, async (req, res) => {
+  try {
+    const postCollec = getPostCollec();
+    const postId = new ObjectId(req.params.id);
+    const userId = req.user.id;
+    const optionIndex = req.body.optionIndex;
+
+    const post = await postCollec.findOne({ _id: postId });
+    if (!post) return res.status(404).send("Post not found");
+    if (!post.poll || !post.poll.options) return res.status(400).send("This post has no poll");
+    if (optionIndex < 0 || optionIndex >= post.poll.options.length) {
+      return res.status(400).send("Invalid option index");
+    }
+
+    const updatedOptions = post.poll.options.map((opt, idx) => {
+      const currentVotes = (opt.votes || []).filter((id) => id.toString() !== userId);
+      if (idx === optionIndex) currentVotes.push(userId);
+      return { ...opt, votes: currentVotes };
+    });
+
+    await postCollec.updateOne(
+      { _id: postId },
+      { $set: { "poll.options": updatedOptions } }
+    );
+
+    res.send({ options: updatedOptions });
+  } catch (err) {
+    res.status(500).send(err.message);
+  }
+});
+
 connectDB()
   .then(() => {
     app.listen(3000, () => console.log("Server running on 3000"));

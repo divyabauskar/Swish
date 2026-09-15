@@ -61,6 +61,26 @@ function Home() {
     };
   }, []);
 
+  const handleVote = (postId, optionIndex, currentOptions) => {
+    if (!profile) return;
+
+    const updatedOptions = currentOptions.map((opt, idx) => {
+      const currentVotes = (opt.votes || []).filter((id) => id !== profile._id);
+      if (idx === optionIndex) currentVotes.push(profile._id);
+      return { ...opt, votes: currentVotes };
+    });
+
+    setPosts((prev) =>
+      prev.map((p) =>
+        p._id === postId ? { ...p, poll: { ...p.poll, options: updatedOptions } } : p
+      )
+    );
+
+    axios
+      .patch(`http://localhost:3000/post/${postId}/vote`, { optionIndex }, { withCredentials: true })
+      .catch((err) => console.error('Error voting:', err));
+  };
+
   const handleLikeToggle = (postId) => {
     const isLiked = !!likedPosts[postId];
 
@@ -231,6 +251,52 @@ function Home() {
                     <p className="ig-caption">
                       <strong>{post.authorName}</strong> {post.caption}
                     </p>
+
+                    {post.poll && post.poll.options?.length > 0 && (() => {
+                      const pollOptions = post.poll.options;
+                      const totalVotes = pollOptions.reduce((sum, opt) => sum + (opt.votes?.length || 0), 0);
+                      const myVoteIndex = pollOptions.findIndex((opt) => (opt.votes || []).includes(profile?._id));
+                      const hasVoted = myVoteIndex !== -1;
+
+                      return (
+                        <div className="wa-poll">
+                          <p className="wa-poll-question">{post.poll.question}</p>
+                          <div className="wa-poll-options">
+                            {pollOptions.map((opt, idx) => {
+                              const voteCount = opt.votes?.length || 0;
+                              const percent = totalVotes > 0 ? Math.round((voteCount / totalVotes) * 100) : 0;
+                              const isSelected = myVoteIndex === idx;
+
+                              return (
+                                <div
+                                  key={idx}
+                                  className={`wa-poll-option ${hasVoted ? 'wa-poll-voted' : ''} ${
+                                    isSelected ? 'wa-poll-selected' : ''
+                                  }`}
+                                  onClick={() => {
+                                    if (!isSelected) handleVote(post._id, idx, pollOptions);
+                                  }}
+                                >
+                                  {hasVoted && (
+                                    <div className="wa-poll-fill" style={{ width: `${percent}%` }}></div>
+                                  )}
+                                  <div className="wa-poll-option-content">
+                                    <span className="wa-poll-radio">
+                                      {isSelected && <span className="wa-poll-radio-dot"></span>}
+                                    </span>
+                                    <span className="wa-poll-option-text">{opt.text}</span>
+                                    {hasVoted && <span className="wa-poll-percent">{percent}%</span>}
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                          <p className="wa-poll-footer">
+                            {hasVoted ? 'Tap to change your vote' : 'Select an option'}
+                          </p>
+                        </div>
+                      );
+                    })()}
 
                     <p className="ig-timestamp">
                       {new Date(post.createdAt).toLocaleDateString('en-US', {
