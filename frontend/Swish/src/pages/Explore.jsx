@@ -5,45 +5,57 @@ import Navbar from '../components/Navbar';
 import BottomNav from '../components/BottomNav';
 import '../components/Layout.css';
 import './MyPosts.css';
+import './Explore.css';
 
-function Home() {
+function Explore() {
   const nav = useNavigate();
-  let stories = ["Coding Club", "Aarav", "Drama Soc", "Debate"];
 
   const [profile, setProfile] = useState(null);
   const [posts, setPosts] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [profiles, setProfiles] = useState([]);
+  const [loadingPosts, setLoadingPosts] = useState(true);
+  const [loadingProfiles, setLoadingProfiles] = useState(true);
+  const [profileActionLoading, setProfileActionLoading] = useState({});
 
+  // Likes & comments state for posts
   const [likedPosts, setLikedPosts] = useState({});
   const [likeCounts, setLikeCounts] = useState({});
-
   const [commentsByPost, setCommentsByPost] = useState({});
   const [commentDrafts, setCommentDrafts] = useState({});
   const [expandedComments, setExpandedComments] = useState({});
 
-
+  // Fetch current user profile
   useEffect(() => {
-    let isMounted = true;
-    let profileData = null;
-
     axios
       .get('http://localhost:3000/profile', { withCredentials: true })
-      .then((profileRes) => {
+      .then((res) => setProfile(res.data))
+      .catch((err) => console.error('Error loading current user profile:', err));
+  }, []);
+
+  // Fetch trending people and trending posts
+  useEffect(() => {
+    let isMounted = true;
+    setLoadingPosts(true);
+    setLoadingProfiles(true);
+
+    axios
+      .get('http://localhost:3000/explore/trending', { withCredentials: true })
+      .then((res) => {
         if (!isMounted) return;
-        profileData = profileRes.data;
-        setProfile(profileRes.data);
-        return axios.get('http://localhost:3000/post', { withCredentials: true });
-      })
-      .then((postsRes) => {
-        if (!isMounted || !postsRes) return;
+        const data = res.data || {};
+        const people = data.trendingPeople || [];
+        const postsData = data.trendingPosts || [];
+
+        setProfiles(people);
+        setPosts(postsData);
 
         const initialLiked = {};
         const initialCounts = {};
         const initialComments = {};
 
-        postsRes.data.forEach((p) => {
+        postsData.forEach((p) => {
           initialLiked[p._id] = (p.likes || []).some(
-            (id) => id === profileData._id || id?.toString?.() === profileData._id
+            (id) => id === profile?._id || id?.toString?.() === profile?._id
           );
           initialCounts[p._id] = p.likes?.length || 0;
           initialComments[p._id] = p.comments || [];
@@ -52,38 +64,27 @@ function Home() {
         setLikedPosts(initialLiked);
         setLikeCounts(initialCounts);
         setCommentsByPost(initialComments);
-        setPosts(postsRes.data);
       })
-      .catch((err) => console.error('Error loading feed:', err))
+      .catch((err) => {
+        console.error('Error loading explore trending data:', err);
+        if (isMounted) {
+          setProfiles([]);
+          setPosts([]);
+        }
+      })
       .finally(() => {
-        if (isMounted) setLoading(false);
+        if (isMounted) {
+          setLoadingPosts(false);
+          setLoadingProfiles(false);
+        }
       });
 
     return () => {
       isMounted = false;
     };
-  }, []);
+  }, [profile?._id]);
 
-  const handleVote = (postId, optionIndex, currentOptions) => {
-    if (!profile) return;
-
-    const updatedOptions = currentOptions.map((opt, idx) => {
-      const currentVotes = (opt.votes || []).filter((id) => id !== profile._id);
-      if (idx === optionIndex) currentVotes.push(profile._id);
-      return { ...opt, votes: currentVotes };
-    });
-
-    setPosts((prev) =>
-      prev.map((p) =>
-        p._id === postId ? { ...p, poll: { ...p.poll, options: updatedOptions } } : p
-      )
-    );
-
-    axios
-      .patch(`http://localhost:3000/post/${postId}/vote`, { optionIndex }, { withCredentials: true })
-      .catch((err) => console.error('Error voting:', err));
-  };
-
+  // Handle like toggle
   const handleLikeToggle = (postId) => {
     const isLiked = !!likedPosts[postId];
 
@@ -102,6 +103,7 @@ function Home() {
       });
   };
 
+  // Comments handlers
   const handleCommentDraftChange = (postId, value) => {
     setCommentDrafts((prev) => ({ ...prev, [postId]: value }));
   };
@@ -141,7 +143,69 @@ function Home() {
     setExpandedComments((prev) => ({ ...prev, [postId]: !prev[postId] }));
   };
 
-  const visiblePosts = posts.filter((p) => !p.archived);
+  // Follow actions in discovery section
+  const handleProfileFollowAction = async (targetUser) => {
+    const targetId = targetUser._id;
+    if (profileActionLoading[targetId]) return;
+
+    setProfileActionLoading((prev) => ({ ...prev, [targetId]: true }));
+    const currentStatus = targetUser.relationshipStatus;
+
+    try {
+      if (currentStatus === 'none') {
+        // Send follow request
+        const res = await axios.post(
+          `http://localhost:3000/follow/${targetId}`,
+          {},
+          { withCredentials: true }
+        );
+        const newStatus = res.data.status || 'requested';
+        setProfiles((prev) =>
+          prev.map((u) => (u._id === targetId ? { ...u, relationshipStatus: newStatus } : u))
+        );
+      } else if (currentStatus === 'follow_back') {
+        // Follow back
+        await axios.post(
+          `http://localhost:3000/follow/back/${targetId}`,
+          {},
+          { withCredentials: true }
+        );
+        setProfiles((prev) =>
+          prev.map((u) =>
+            u._id === targetId
+              ? {
+                  ...u,
+                  relationshipStatus: 'following',
+                  followerCount: (u.followerCount || 0) + 1,
+                }
+              : u
+          )
+        );
+      } else if (currentStatus === 'requested' || currentStatus === 'following') {
+        // Unfollow or cancel request
+        await axios.delete(`http://localhost:3000/unfollow/${targetId}`, { withCredentials: true });
+        setProfiles((prev) =>
+          prev.map((u) =>
+            u._id === targetId
+              ? {
+                  ...u,
+                  relationshipStatus: 'none',
+                  followerCount:
+                    currentStatus === 'following'
+                      ? Math.max((u.followerCount || 0) - 1, 0)
+                      : u.followerCount,
+                }
+              : u
+          )
+        );
+      }
+    } catch (err) {
+      console.error('Error in profile follow action:', err);
+      alert(err.response?.data || 'Failed to update follow relationship');
+    } finally {
+      setProfileActionLoading((prev) => ({ ...prev, [targetId]: false }));
+    }
+  };
 
   return (
     <div className="page-wrapper">
@@ -150,36 +214,127 @@ function Home() {
       <div className="app-shell">
         <Navbar />
 
-        <div className="feed-header">
-          <p className="eyebrow">For You</p>
-          <h1>Happening on campus</h1>
-          <p className="subtext">Tuned to the accounts you follow, plus what campus can't stop talking about.</p>
+        <div className="feed-header explore-header">
+          <p className="eyebrow">Discover</p>
+          <h1>Explore Campus</h1>
+          <p className="subtext">
+            Discover what's trending across your campus.
+          </p>
         </div>
 
-        <div className="stories-row">
-          <div className="story story-add">
-            <div className="story-ring add-ring">+</div>
-            <span>Your story</span>
-          </div>
-
-          {stories.map((name) => (
-            <div className="story" key={name}>
-              <div className="story-ring"></div>
-              <span>{name}</span>
+        {/* Profiles Discovery Section: Trending People */}
+        {profiles.length > 0 && (
+          <div className="explore-profiles-section">
+            <div className="explore-section-title-wrap">
+              <h2 className="explore-section-title">🔥 Trending People</h2>
             </div>
-          ))}
+
+            <div className="explore-profiles-scroll">
+              {profiles.map((u) => {
+                const isActioning = !!profileActionLoading[u._id];
+                const displayName = u.fullname || u.fullName || 'Campus User';
+
+                return (
+                  <div className="explore-profile-card" key={u._id}>
+                    <div
+                      className="explore-profile-avatar-wrap"
+                      onClick={() => nav(`/profile/${u._id}`)}
+                    >
+                      {u.profilePhoto ? (
+                        <img src={u.profilePhoto} alt="" className="explore-profile-avatar" />
+                      ) : (
+                        <div className="explore-profile-avatar-placeholder">
+                          {displayName.charAt(0).toUpperCase()}
+                        </div>
+                      )}
+                    </div>
+
+                    <p
+                      className="explore-profile-name"
+                      title={displayName}
+                      onClick={() => nav(`/profile/${u._id}`)}
+                    >
+                      {displayName}
+                    </p>
+
+                    <p className="explore-profile-dept" title={u.department || u.role || 'Student'}>
+                      {u.department || u.role || 'Student'}
+                    </p>
+
+                    <p className="explore-profile-stats">
+                      {u.followerCount || 0} {u.followerCount === 1 ? 'follower' : 'followers'}
+                    </p>
+
+                    {u.relationshipStatus === 'none' && (
+                      <button
+                        type="button"
+                        className="btn-explore-follow"
+                        disabled={isActioning}
+                        onClick={() => handleProfileFollowAction(u)}
+                      >
+                        {isActioning ? '...' : 'Follow'}
+                      </button>
+                    )}
+
+                    {u.relationshipStatus === 'requested' && (
+                      <button
+                        type="button"
+                        className="btn-explore-requested"
+                        disabled={isActioning}
+                        onClick={() => handleProfileFollowAction(u)}
+                        title="Click to cancel follow request"
+                      >
+                        {isActioning ? '...' : 'Requested'}
+                      </button>
+                    )}
+
+                    {u.relationshipStatus === 'following' && (
+                      <button
+                        type="button"
+                        className="btn-explore-following"
+                        disabled={isActioning}
+                        onClick={() => handleProfileFollowAction(u)}
+                        title="Click to unfollow"
+                      >
+                        {isActioning ? '...' : 'Following'}
+                      </button>
+                    )}
+
+                    {u.relationshipStatus === 'follow_back' && (
+                      <button
+                        type="button"
+                        className="btn-explore-follow-back"
+                        disabled={isActioning}
+                        onClick={() => handleProfileFollowAction(u)}
+                      >
+                        {isActioning ? '...' : 'Follow Back'}
+                      </button>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* Section Heading: Trending Posts */}
+        <div style={{ margin: '14px 0 10px 4px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <h2 className="explore-section-title">🔥 Trending Posts</h2>
+          <span style={{ fontSize: '12px', color: '#8C8494', fontWeight: 600 }}>
+            {posts.length} {posts.length === 1 ? 'post' : 'posts'}
+          </span>
         </div>
 
-
+        {/* Posts Feed */}
         <div className="myposts-feed feed-placeholder">
-          {loading && <p className="no-posts-text">Loading feed...</p>}
+          {loadingPosts && <p className="no-posts-text">Loading trending posts...</p>}
 
-          {!loading && visiblePosts.length === 0 && (
-            <p className="no-posts-text">No posts yet — be the first to share something!</p>
+          {!loadingPosts && posts.length === 0 && (
+            <p className="no-posts-text">No trending posts right now. Check back soon!</p>
           )}
 
-          {!loading &&
-            visiblePosts.map((post) => {
+          {!loadingPosts &&
+            posts.map((post) => {
               const isLiked = !!likedPosts[post._id];
               const likeCount = likeCounts[post._id] || 0;
               const comments = commentsByPost[post._id] || [];
@@ -205,6 +360,10 @@ function Home() {
                         {post.location && <p className="ig-location">📍 {post.location}</p>}
                       </div>
                     </div>
+
+                    {post.isTrending && (
+                      <span className="post-trend-badge">🔥 Trending</span>
+                    )}
                   </div>
 
                   {post.images && post.images.length > 0 && (
@@ -266,52 +425,6 @@ function Home() {
                       </strong>{' '}
                       {post.caption}
                     </p>
-
-                    {post.poll && post.poll.options?.length > 0 && (() => {
-                      const pollOptions = post.poll.options;
-                      const totalVotes = pollOptions.reduce((sum, opt) => sum + (opt.votes?.length || 0), 0);
-                      const myVoteIndex = pollOptions.findIndex((opt) => (opt.votes || []).includes(profile?._id));
-                      const hasVoted = myVoteIndex !== -1;
-
-                      return (
-                        <div className="wa-poll">
-                          <p className="wa-poll-question">{post.poll.question}</p>
-                          <div className="wa-poll-options">
-                            {pollOptions.map((opt, idx) => {
-                              const voteCount = opt.votes?.length || 0;
-                              const percent = totalVotes > 0 ? Math.round((voteCount / totalVotes) * 100) : 0;
-                              const isSelected = myVoteIndex === idx;
-
-                              return (
-                                <div
-                                  key={idx}
-                                  className={`wa-poll-option ${hasVoted ? 'wa-poll-voted' : ''} ${
-                                    isSelected ? 'wa-poll-selected' : ''
-                                  }`}
-                                  onClick={() => {
-                                    if (!isSelected) handleVote(post._id, idx, pollOptions);
-                                  }}
-                                >
-                                  {hasVoted && (
-                                    <div className="wa-poll-fill" style={{ width: `${percent}%` }}></div>
-                                  )}
-                                  <div className="wa-poll-option-content">
-                                    <span className="wa-poll-radio">
-                                      {isSelected && <span className="wa-poll-radio-dot"></span>}
-                                    </span>
-                                    <span className="wa-poll-option-text">{opt.text}</span>
-                                    {hasVoted && <span className="wa-poll-percent">{percent}%</span>}
-                                  </div>
-                                </div>
-                              );
-                            })}
-                          </div>
-                          <p className="wa-poll-footer">
-                            {hasVoted ? 'Tap to change your vote' : 'Select an option'}
-                          </p>
-                        </div>
-                      );
-                    })()}
 
                     <p className="ig-timestamp">
                       {new Date(post.createdAt).toLocaleDateString('en-US', {
@@ -397,4 +510,4 @@ function Home() {
   );
 }
 
-export default Home;
+export default Explore;

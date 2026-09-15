@@ -10,6 +10,10 @@ async function connectDB() {
   console.log("MongoDB connected successfully");
 
   await db.collection("posts").createIndex({ createdAt: -1 });
+  await db.collection("follows").createIndex({ followerId: 1, followingId: 1 }, { unique: true });
+  await db.collection("follows").createIndex({ followingId: 1, status: 1 });
+  await db.collection("follows").createIndex({ followerId: 1, status: 1 });
+  await db.collection("notifications").createIndex({ recipientId: 1, createdAt: -1 });
 }
 
 function getUserCollec() {
@@ -22,4 +26,14 @@ function getPostCollec() {
   return db.collection("posts");
 }
 
-module.exports = { connectDB, getUserCollec, getPostCollec };
+function getFollowCollec() {
+  if (!db) throw new Error("Database not connected yet");
+  return db.collection("follows");
+}
+
+function getNotifCollec() {
+  if (!db) throw new Error("Database not connected yet");
+  return db.collection("notifications");
+}
+
+module.exports = { connectDB, getUserCollec, getPostCollec, getFollowCollec, getNotifCollec };

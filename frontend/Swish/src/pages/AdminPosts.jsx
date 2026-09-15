@@ -2,10 +2,17 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import axios from 'axios';
 import './MyPosts.css';
+import { getErrorMessage } from '../utils/getErrorMessage';
 
 function AdminPosts() {
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [toast, setToast] = useState({ message: '', type: '' });
+
+  const showToast = (message, type = 'success') => {
+    setToast({ message, type });
+    setTimeout(() => setToast({ message: '', type: '' }), 3000);
+  };
 
   useEffect(() => {
     let isMounted = true;
@@ -16,7 +23,10 @@ function AdminPosts() {
         if (!isMounted) return;
         setPosts(res.data);
       })
-      .catch((err) => console.error('Error loading posts:', err))
+      .catch((err) => {
+        console.error('Error loading posts:', err);
+        if (isMounted) showToast(getErrorMessage(err), 'error');
+      })
       .finally(() => {
         if (isMounted) setLoading(false);
       });
@@ -40,7 +50,11 @@ function AdminPosts() {
 
     axios
       .delete(`http://localhost:3000/post/${postId}/comment/${commentId}`, { withCredentials: true })
-      .catch((err) => console.error('Error deleting comment:', err));
+      .then(() => showToast('Comment deleted', 'success'))
+      .catch((err) => {
+        console.error('Error deleting comment:', err);
+        showToast(getErrorMessage(err), 'error');
+      });
   };
 
   return (
@@ -49,6 +63,12 @@ function AdminPosts() {
         <Link to="/admin-dashboard" className="back-btn">‹ Back</Link>
         <h2>Manage Posts</h2>
       </div>
+
+      {toast.message && (
+        <div className={`post-toast ${toast.type === 'error' ? 'post-toast-error' : 'post-toast-success'}`}>
+          {toast.message}
+        </div>
+      )}
 
       {loading && <p className="no-posts-text">Loading posts...</p>}
 

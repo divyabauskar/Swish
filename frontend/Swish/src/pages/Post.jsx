@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import "./Post.css";
+import { getErrorMessage } from "../utils/getErrorMessage";
 
 const Post = () => {
   const [post, setPost] = useState(null);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
-  const [toast, setToast] = useState("");
+  const [toast, setToast] = useState({ message: "", type: "" });
 
   const [caption, setCaption] = useState("");
   const [category, setCategory] = useState("general");
@@ -19,12 +20,18 @@ const Post = () => {
   const [pollQuestion, setPollQuestion] = useState("");
   const [pollOptions, setPollOptions] = useState(["", ""]);
 
+  const showToast = (message, type = "success") => {
+    setToast({ message, type });
+    setTimeout(() => setToast({ message: "", type: "" }), 3000);
+  };
+
   const fetchPost = async () => {
     try {
       const res = await axios.get("http://localhost:3000/post", { withCredentials: true });
       setPost(res.data);
     } catch (err) {
       console.error("Error fetching post:", err);
+      showToast(getErrorMessage(err), "error");
     } finally {
       setLoading(false);
     }
@@ -33,11 +40,6 @@ const Post = () => {
   useEffect(() => {
     fetchPost();
   }, []);
-
-  const showToast = (message) => {
-    setToast(message);
-    setTimeout(() => setToast(""), 3000);
-  };
 
   const openModal = () => {
     setCaption("");
@@ -58,13 +60,13 @@ const Post = () => {
     if (!files.length) return;
 
     if (images.length + files.length > 10) {
-      alert("You can only upload up to 10 images.");
+      showToast("You can only upload up to 10 images.", "error");
       return;
     }
 
     files.forEach((file) => {
       if (file.size > 2 * 1024 * 1024) {
-        alert(`${file.name} is larger than 2MB. Please choose smaller images.`);
+        showToast(`${file.name} is larger than 2MB. Please choose smaller images.`, "error");
         return;
       }
       const reader = new FileReader();
@@ -89,7 +91,7 @@ const Post = () => {
 
   const addPollOption = () => {
     if (pollOptions.length >= 6) {
-      alert("Maximum 6 options allowed");
+      showToast("Maximum 6 options allowed", "error");
       return;
     }
     setPollOptions([...pollOptions, ""]);
@@ -105,12 +107,12 @@ const Post = () => {
 
     if (category === "event") {
       if (!pollQuestion.trim()) {
-        alert("Please fill in the poll question, or switch category if you don't want a poll.");
+        showToast("Please fill in the poll question, or switch category if you don't want a poll.", "error");
         return;
       }
       const filledOptions = pollOptions.filter((opt) => opt.trim() !== "");
       if (filledOptions.length < 2) {
-        alert("Please fill in at least 2 poll options.");
+        showToast("Please fill in at least 2 poll options.", "error");
         return;
       }
     }
@@ -143,10 +145,10 @@ const Post = () => {
       );
       setPost(res.data);
       closeModal();
-      showToast("Post created successfully!");
+      showToast("Post created successfully!", "success");
     } catch (err) {
       console.error("Error creating post:", err);
-      alert(err.response?.data?.message || "Failed to create post");
+      showToast(getErrorMessage(err), "error");
     } finally {
       setSubmitting(false);
     }
@@ -166,7 +168,11 @@ const Post = () => {
         + New Post
       </button>
 
-      {toast && <div className="post-toast">{toast}</div>}
+      {toast.message && (
+        <div className={`post-toast ${toast.type === "error" ? "post-toast-error" : "post-toast-success"}`}>
+          {toast.message}
+        </div>
+      )}
 
       {showModal && (
         <div className="modal-overlay" onClick={closeModal}>
