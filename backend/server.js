@@ -7,7 +7,8 @@ let bcrypt = require("bcryptjs");
 let jwt = require("jsonwebtoken");
 let { ObjectId } = require("mongodb");
 let { connectDB, getUserCollec, getPostCollec, getFollowCollec, getNotifCollec } = require("./config/db");
-
+const http = require("http");
+const { Server } = require("socket.io");
 let app = express();
 let SECRET = process.env.JWT_SECRET;
 
@@ -795,7 +796,6 @@ app.get("/admin/posts", auth, requireAdmin, async (req, res) => {
   }
 });
 
-<<<<<<< HEAD
 app.patch("/post/:id/vote", auth, async (req, res) => {
   try {
     const postCollec = getPostCollec();
@@ -822,10 +822,10 @@ app.patch("/post/:id/vote", auth, async (req, res) => {
     );
 
     res.send({ options: updatedOptions });
-=======
-// ==========================================
-// FOLLOW & RELATIONSHIP ROUTES
-// ==========================================
+  } catch (err) {
+    res.status(500).send(err.message);
+  }
+});
 
 // Send follow request
 app.post("/follow/:targetUserId", auth, async (req, res) => {
@@ -885,14 +885,11 @@ app.post("/follow/:targetUserId", auth, async (req, res) => {
     await notifCollec.insertOne(newNotif);
 
     res.send({ message: "Follow request sent", status: "requested" });
->>>>>>> b7f9816086e098881784ddeb5f79cc576f320ce7
   } catch (err) {
     res.status(500).send(err.message);
   }
 });
 
-<<<<<<< HEAD
-=======
 // Accept follow request
 app.post("/follow/accept/:targetUserId", auth, async (req, res) => {
   try {
@@ -1223,8 +1220,47 @@ app.patch("/notifications/read-all", auth, async (req, res) => {
   }
 });
 
+ app.post("/admin/warn/:id", auth, requireFacultyOrAdmin, async (req, res) => {
+  try {
+    const userCollec = getUserCollec();
+    const notifCollec = getNotifCollec();
+    const targetId = new ObjectId(req.params.id);
 
->>>>>>> b7f9816086e098881784ddeb5f79cc576f320ce7
+    const reason = req.body.reason?.trim();
+    if (!reason) return res.status(400).send("A reason is required to send a warning");
+
+    const target = await userCollec.findOne({ _id: targetId });
+    if (!target) return res.status(404).send("User not found");
+
+    // Faculty can only warn Students, same rule as suspend/reactivate
+    if (req.user.role === "Faculty" && target.role !== "Student") {
+      return res.status(403).send("Faculty can only warn student accounts");
+    }
+
+    const senderUser = await userCollec.findOne({ _id: new ObjectId(req.user.id) });
+
+    await notifCollec.insertOne({
+      recipientId: targetId,
+      senderId: new ObjectId(req.user.id),
+      senderName: senderUser?.fullname || "Admin",
+      senderPhoto: senderUser?.profilePhoto || "",
+      type: "warning",
+      warningText: reason,
+      status: "unread",
+      createdAt: new Date(),
+    });
+
+    await userCollec.updateOne(
+      { _id: targetId },
+      { $inc: { warningCount: 1 } }
+    );
+
+    res.send({ message: "Warning sent successfully" });
+  } catch (err) {
+    res.status(500).send(err.message);
+  }
+});
+
 connectDB()
   .then(() => {
     app.listen(3000, () => console.log("Server running on 3000"));

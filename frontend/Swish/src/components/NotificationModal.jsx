@@ -127,17 +127,20 @@ const NotificationModal = ({ isOpen, onClose, onCountUpdate }) => {
           ) : (
             notifications.map((notif) => {
               const isActioning = actionLoading[notif.senderId];
+              const isWarning = notif.type === 'warning';
 
               return (
                 <div
                   key={notif._id}
-                  className={`notif-item ${notif.status === 'unread' ? 'notif-unread' : ''}`}
+                  className={`notif-item ${notif.status === 'unread' ? 'notif-unread' : ''} ${isWarning ? 'notif-warning' : ''}`}
                 >
                   <div
                     className="notif-avatar-wrap"
                     onClick={() => handleUserClick(notif.senderId)}
                   >
-                    {notif.senderPhoto ? (
+                    {isWarning ? (
+                      <div className="notif-avatar notif-avatar-warning">⚠️</div>
+                    ) : notif.senderPhoto ? (
                       <img src={notif.senderPhoto} alt="" className="notif-avatar" />
                     ) : (
                       <div className="notif-avatar notif-avatar-placeholder">
@@ -152,7 +155,7 @@ const NotificationModal = ({ isOpen, onClose, onCountUpdate }) => {
                         className="notif-sender-name"
                         onClick={() => handleUserClick(notif.senderId)}
                       >
-                        {notif.senderName}
+                        {isWarning ? 'Admin' : notif.senderName}
                       </strong>{' '}
                       {notif.type === 'follow_request' && 'wants to follow you.'}
                       {notif.type === 'follow_accept' && 'accepted your follow request.'}
@@ -164,6 +167,16 @@ const NotificationModal = ({ isOpen, onClose, onCountUpdate }) => {
                           {notif.commentText && (
                             <span style={{ display: 'block', fontStyle: 'italic', color: '#6B6478', fontSize: '12px', marginTop: '2px' }}>
                               "{notif.commentText}"
+                            </span>
+                          )}
+                        </>
+                      )}
+                      {isWarning && (
+                        <>
+                          issued you a warning.
+                          {notif.warningText && (
+                            <span className="notif-warning-text">
+                              "{notif.warningText}"
                             </span>
                           )}
                         </>

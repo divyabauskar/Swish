@@ -10,12 +10,9 @@ const MyPosts = () => {
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [openMenuId, setOpenMenuId] = useState(null);
-<<<<<<< HEAD
   const [toast, setToast] = useState('');
-=======
   const [votedPolls, setVotedPolls] = useState({});
-  const [toast, setToast] = useState({ message: '', type: '' });
->>>>>>> b7f9816086e098881784ddeb5f79cc576f320ce7
+  const [toast1, setToast1] = useState({ message: '', type: '' });
 
   const [likedPosts, setLikedPosts] = useState({});
   const [likeCounts, setLikeCounts] = useState({});
