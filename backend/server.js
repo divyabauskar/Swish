@@ -1269,3 +1269,127 @@ connectDB()
     console.error("Failed to connect to MongoDB:", err.message);
     process.exit(1);
   });
+
+  app.patch("/post/:id/flag", auth, requireFacultyOrAdmin, async (req, res) => {
+  try {
+    const postCollec = getPostCollec();
+    const userCollec = getUserCollec();
+    const notifCollec = getNotifCollec();
+    const postId = new ObjectId(req.params.id);
+
+    const reason = req.body.reason?.trim();
+    if (!reason) return res.status(400).send("A reason is required to flag a post");
+
+    const post = await postCollec.findOne({ _id: postId });
+    if (!post) return res.status(404).send("Post not found");
+
+    const flaggerUser = await userCollec.findOne({ _id: new ObjectId(req.user.id) });
+
+    await postCollec.updateOne(
+      { _id: postId },
+      {
+        $set: {
+          flagged: true,
+          flagReason: reason,
+          flaggedBy: new ObjectId(req.user.id),
+          flaggedByName: flaggerUser?.fullname || "Faculty",
+          flaggedAt: new Date(),
+        },
+      }
+    );
+
+    if (post.authorId) {
+      await notifCollec.insertOne({
+        recipientId: post.authorId,
+        senderId: new ObjectId(req.user.id),
+        senderName: flaggerUser?.fullname || "Faculty",
+        type: "post_flagged",
+        postId: postId,
+        flagReason: reason,
+        status: "unread",
+        createdAt: new Date(),
+      });
+    }
+
+    res.send({ message: "Post flagged successfully" });
+  } catch (err) {
+    res.status(500).send(err.message);
+  }
+});
+
+app.patch("/post/:postId/comment/:commentId/flag", auth, requireFacultyOrAdmin, async (req, res) => {
+  try {
+    const postCollec = getPostCollec();
+    const userCollec = getUserCollec();
+    const notifCollec = getNotifCollec();
+    const postId = new ObjectId(req.params.postId);
+    const commentId = new ObjectId(req.params.commentId);
+
+    const reason = req.body.reason?.trim();
+    if (!reason) return res.status(400).send("A reason is required to flag a comment");
+
+    const post = await postCollec.findOne({ _id: postId });
+    if (!post) return res.status(404).send("Post not found");
+
+    const comment = (post.comments || []).find((c) => c._id?.toString() === req.params.commentId);
+    if (!comment) return res.status(404).send("Comment not found");
+
+    const flaggerUser = await userCollec.findOne({ _id: new ObjectId(req.user.id) });
+
+    await postCollec.updateOne(
+      { _id: postId, "comments._id": commentId },
+      {
+        $set: {
+          "comments.$.flagged": true,
+          "comments.$.flagReason": reason,
+          "comments.$.flaggedBy": new ObjectId(req.user.id),
+        },
+      }
+    );
+
+    if (comment.authorId) {
+      await notifCollec.insertOne({
+        recipientId: comment.authorId,
+        senderId: new ObjectId(req.user.id),
+        senderName: flaggerUser?.fullname || "Faculty",
+        type: "comment_flagged",
+        postId: postId,
+        flagReason: reason,
+        status: "unread",
+        createdAt: new Date(),
+      });
+    }
+
+    res.send({ message: "Comment flagged successfully" });
+  } catch (err) {
+    res.status(500).send(err.message);
+  }
+});
+
+app.get("/faculty/posts", auth, requireFacultyOrAdmin, async (req, res) => {
+  try {
+    const postCollec = getPostCollec();
+    const posts = await postCollec
+      .find({ authorRole: "Student" })
+      .sort({ createdAt: -1 })
+      .toArray();
+
+    // flagged posts float to the top, regardless of date
+    posts.sort((a, b) => (b.flagged ? 1 : 0) - (a.flagged ? 1 : 0));
+
+    res.send(posts);
+  } catch (err) {
+    res.status(500).send(err.message);
+  }
+});
+
+app.get("/admin/posts", auth, requireAdmin, async (req, res) => {
+  try {
+    const postCollec = getPostCollec();
+    let posts = await postCollec.find({}).sort({ createdAt: -1 }).toArray();
+    posts.sort((a, b) => (b.flagged ? 1 : 0) - (a.flagged ? 1 : 0));
+    res.send(posts);
+  } catch (err) {
+    res.status(500).send(err.message);
+  }
+});

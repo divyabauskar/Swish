@@ -5,6 +5,7 @@ import Navbar from '../components/Navbar';
 import BottomNav from '../components/BottomNav';
 import '../components/Layout.css';
 import './MyPosts.css';
+import { getErrorMessage } from '../utils/getErrorMessage';
 
 function Home() {
   const nav = useNavigate();
@@ -21,6 +22,19 @@ function Home() {
   const [commentDrafts, setCommentDrafts] = useState({});
   const [expandedComments, setExpandedComments] = useState({});
 
+  // ---- Flag feature state ----
+  const [openMenuId, setOpenMenuId] = useState(null);
+  const [flagTarget, setFlagTarget] = useState(null); // { type: 'post'|'comment', postId, commentId, label }
+  const [flagReason, setFlagReason] = useState('');
+  const [submittingFlag, setSubmittingFlag] = useState(false);
+  const [toast, setToast] = useState({ message: '', type: '' });
+
+  const showToast = (message, type = 'success') => {
+    setToast({ message, type });
+    setTimeout(() => setToast({ message: '', type: '' }), 3000);
+  };
+
+  const canModerate = profile && (profile.role === 'Faculty' || profile.role === 'Admin');
 
   useEffect(() => {
     let isMounted = true;
@@ -141,14 +155,71 @@ function Home() {
     setExpandedComments((prev) => ({ ...prev, [postId]: !prev[postId] }));
   };
 
+  // ---- Flag feature handlers ----
+  const openFlagModal = (type, postId, commentId, label) => {
+    setFlagTarget({ type, postId, commentId, label });
+    setFlagReason('');
+    setOpenMenuId(null);
+  };
+
+  const closeFlagModal = () => {
+    setFlagTarget(null);
+    setFlagReason('');
+  };
+
+  const handleSubmitFlag = (e) => {
+    e.preventDefault();
+    if (!flagReason.trim()) {
+      showToast('Please write a reason for flagging', 'error');
+      return;
+    }
+
+    setSubmittingFlag(true);
+    const url = flagTarget.type === 'post'
+      ? `http://localhost:3000/post/${flagTarget.postId}/flag`
+      : `http://localhost:3000/post/${flagTarget.postId}/comment/${flagTarget.commentId}/flag`;
+
+    axios.patch(url, { reason: flagReason.trim() }, { withCredentials: true })
+      .then(() => {
+        showToast(`${flagTarget.type === 'post' ? 'Post' : 'Comment'} flagged`, 'success');
+        if (flagTarget.type === 'post') {
+          setPosts((prev) =>
+            prev.map((p) =>
+              p._id === flagTarget.postId
+                ? { ...p, flagged: true, flagReason: flagReason.trim() }
+                : p
+            )
+          );
+        } else {
+          setCommentsByPost((prev) => ({
+            ...prev,
+            [flagTarget.postId]: (prev[flagTarget.postId] || []).map((c) =>
+              (c._id?.toString?.() || c._id) === flagTarget.commentId
+                ? { ...c, flagged: true }
+                : c
+            ),
+          }));
+        }
+        closeFlagModal();
+      })
+      .catch((err) => showToast(getErrorMessage(err), 'error'))
+      .finally(() => setSubmittingFlag(false));
+  };
+
   const visiblePosts = posts.filter((p) => !p.archived);
 
   return (
-    <div className="page-wrapper">
+    <div className="page-wrapper" onClick={() => setOpenMenuId(null)}>
       <BottomNav />
 
       <div className="app-shell">
         <Navbar />
+
+        {toast.message && (
+          <div className={`post-toast ${toast.type === 'error' ? 'post-toast-error' : 'post-toast-success'}`}>
+            {toast.message}
+          </div>
+        )}
 
         <div className="feed-header">
           <p className="eyebrow">For You</p>
@@ -169,7 +240,6 @@ function Home() {
             </div>
           ))}
         </div>
-
 
         <div className="myposts-feed feed-placeholder">
           {loading && <p className="no-posts-text">Loading feed...</p>}
@@ -205,6 +275,30 @@ function Home() {
                         {post.location && <p className="ig-location">📍 {post.location}</p>}
                       </div>
                     </div>
+
+                    {post.flagged && <span className="flag-badge">🚩 Flagged</span>}
+
+                    {canModerate && (
+                      <div className="ig-menu-wrap" onClick={(e) => e.stopPropagation()}>
+                        <button
+                          type="button"
+                          className="ig-menu-dots"
+                          onClick={() => setOpenMenuId(openMenuId === post._id ? null : post._id)}
+                        >
+                          ⋯
+                        </button>
+                        {openMenuId === post._id && (
+                          <div className="ig-menu-dropdown">
+                            <button
+                              type="button"
+                              onClick={() => openFlagModal('post', post._id, null, post.authorName)}
+                            >
+                              🚩 Flag Post
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    )}
                   </div>
 
                   {post.images && post.images.length > 0 && (
@@ -353,6 +447,7 @@ function Home() {
                                 {c.authorName}
                               </strong>{' '}
                               {c.text}
+                              {c.flagged && <span className="flag-badge-inline">🚩</span>}
                               {canDelete && (
                                 <button
                                   type="button"
@@ -360,6 +455,15 @@ function Home() {
                                   onClick={() => handleCommentDelete(post._id, commentIdStr)}
                                 >
                                   ✕
+                                </button>
+                              )}
+                              {canModerate && commentIdStr && !c.flagged && (
+                                <button
+                                  type="button"
+                                  className="ig-comment-flag"
+                                  onClick={() => openFlagModal('comment', post._id, commentIdStr, c.authorName)}
+                                >
+                                  Flag
                                 </button>
                               )}
                             </p>
@@ -393,6 +497,33 @@ function Home() {
             })}
         </div>
       </div>
+
+      {flagTarget && (
+        <div className="modal-overlay" onClick={closeFlagModal}>
+          <div className="warning-modal" onClick={(e) => e.stopPropagation()}>
+            <h3>Flag {flagTarget.type === 'post' ? 'Post' : 'Comment'}</h3>
+            <p className="warning-modal-subtitle">
+              By <strong>{flagTarget.label}</strong> — explain why this {flagTarget.type} violates college rules.
+            </p>
+            <form onSubmit={handleSubmitFlag}>
+              <textarea
+                placeholder="Write the reason for flagging..."
+                value={flagReason}
+                onChange={(e) => setFlagReason(e.target.value)}
+                required
+              />
+              <div className="modal-actions">
+                <button type="submit" disabled={submittingFlag}>
+                  {submittingFlag ? 'Flagging...' : 'Flag'}
+                </button>
+                <button type="button" onClick={closeFlagModal} disabled={submittingFlag}>
+                  Cancel
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -8,32 +8,29 @@ function AdminPosts() {
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [toast, setToast] = useState({ message: '', type: '' });
+  const [openMenuId, setOpenMenuId] = useState(null);
+  const [warningTarget, setWarningTarget] = useState(null); // { id, name }
+  const [warningReason, setWarningReason] = useState('');
+  const [sendingWarning, setSendingWarning] = useState(false);
 
   const showToast = (message, type = 'success') => {
     setToast({ message, type });
     setTimeout(() => setToast({ message: '', type: '' }), 3000);
   };
 
-  useEffect(() => {
-    let isMounted = true;
-
+  const loadPosts = () => {
     axios
       .get('http://localhost:3000/admin/posts', { withCredentials: true })
-      .then((res) => {
-        if (!isMounted) return;
-        setPosts(res.data);
-      })
+      .then((res) => setPosts(res.data))
       .catch((err) => {
         console.error('Error loading posts:', err);
-        if (isMounted) showToast(getErrorMessage(err), 'error');
+        showToast(getErrorMessage(err), 'error');
       })
-      .finally(() => {
-        if (isMounted) setLoading(false);
-      });
+      .finally(() => setLoading(false));
+  };
 
-    return () => {
-      isMounted = false;
-    };
+  useEffect(() => {
+    loadPosts();
   }, []);
 
   const handleCommentDelete = (postId, commentId) => {
@@ -57,8 +54,41 @@ function AdminPosts() {
       });
   };
 
+  const openWarningModal = (authorId, authorName) => {
+    setWarningTarget({ id: authorId, name: authorName });
+    setWarningReason('');
+    setOpenMenuId(null);
+  };
+
+  const closeWarningModal = () => {
+    setWarningTarget(null);
+    setWarningReason('');
+  };
+
+  const handleSendWarning = (e) => {
+    e.preventDefault();
+    if (!warningReason.trim()) {
+      showToast('Please write a reason for the warning', 'error');
+      return;
+    }
+
+    setSendingWarning(true);
+    axios
+      .post(
+        `http://localhost:3000/admin/warn/${warningTarget.id}`,
+        { reason: warningReason.trim() },
+        { withCredentials: true }
+      )
+      .then(() => {
+        showToast(`Warning sent to ${warningTarget.name}`, 'success');
+        closeWarningModal();
+      })
+      .catch((err) => showToast(getErrorMessage(err), 'error'))
+      .finally(() => setSendingWarning(false));
+  };
+
   return (
-    <div className="myposts-container">
+    <div className="myposts-container" onClick={() => setOpenMenuId(null)}>
       <div className="myposts-header">
         <Link to="/admin-dashboard" className="back-btn">‹ Back</Link>
         <h2>Manage Posts</h2>
@@ -95,8 +125,40 @@ function AdminPosts() {
                     <p className="ig-username">{post.authorName}</p>
                     {post.location && <p className="ig-location">📍 {post.location}</p>}
                   </div>
+
+                  {post.flagged && (
+                    <span className="flag-badge" title={post.flagReason}>
+                      🚩 Flagged
+                    </span>
+                  )}
                   {post.archived && <span className="admin-archived-badge">Archived</span>}
+
+                  <div className="ig-menu-wrap" onClick={(e) => e.stopPropagation()}>
+                    <button
+                      type="button"
+                      className="ig-menu-dots"
+                      onClick={() => setOpenMenuId(openMenuId === post._id ? null : post._id)}
+                    >
+                      ⋯
+                    </button>
+                    {openMenuId === post._id && (
+                      <div className="ig-menu-dropdown">
+                        <button
+                          type="button"
+                          onClick={() => openWarningModal(post.authorId, post.authorName)}
+                        >
+                          ⚠️ Send Warning
+                        </button>
+                      </div>
+                    )}
+                  </div>
                 </div>
+
+                {post.flagged && post.flagReason && (
+                  <p className="flag-reason-text">
+                    🚩 Flagged by {post.flaggedByName || 'Faculty'}: "{post.flagReason}"
+                  </p>
+                )}
 
                 {post.images && post.images.length > 0 && (
                   <div className="ig-image-scroll">
@@ -132,6 +194,7 @@ function AdminPosts() {
                       <p className="ig-comment-item" key={commentIdStr || idx}>
                         <strong>{c.authorName}</strong>
                         {c.text}
+                        {c.flagged && <span className="flag-badge-inline">🚩</span>}
                         {commentIdStr && (
                           <button
                             type="button"
@@ -148,6 +211,33 @@ function AdminPosts() {
               </div>
             );
           })}
+        </div>
+      )}
+
+      {warningTarget && (
+        <div className="modal-overlay" onClick={closeWarningModal}>
+          <div className="warning-modal" onClick={(e) => e.stopPropagation()}>
+            <h3>Send Warning</h3>
+            <p className="warning-modal-subtitle">
+              To <strong>{warningTarget.name}</strong> — explain why this account may be suspended if the behavior continues.
+            </p>
+            <form onSubmit={handleSendWarning}>
+              <textarea
+                placeholder="Write the reason for this warning..."
+                value={warningReason}
+                onChange={(e) => setWarningReason(e.target.value)}
+                required
+              />
+              <div className="modal-actions">
+                <button type="submit" disabled={sendingWarning}>
+                  {sendingWarning ? 'Sending...' : 'Send Warning'}
+                </button>
+                <button type="button" onClick={closeWarningModal} disabled={sendingWarning}>
+                  Cancel
+                </button>
+              </div>
+            </form>
+          </div>
         </div>
       )}
     </div>

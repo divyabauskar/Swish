@@ -128,11 +128,12 @@ const NotificationModal = ({ isOpen, onClose, onCountUpdate }) => {
             notifications.map((notif) => {
               const isActioning = actionLoading[notif.senderId];
               const isWarning = notif.type === 'warning';
+              const isFlag = notif.type === 'post_flagged' || notif.type === 'comment_flagged';
 
               return (
                 <div
                   key={notif._id}
-                  className={`notif-item ${notif.status === 'unread' ? 'notif-unread' : ''} ${isWarning ? 'notif-warning' : ''}`}
+                  className={`notif-item ${notif.status === 'unread' ? 'notif-unread' : ''} ${isWarning ? 'notif-warning' : ''} ${isFlag ? 'notif-flag' : ''}`}
                 >
                   <div
                     className="notif-avatar-wrap"
@@ -140,6 +141,8 @@ const NotificationModal = ({ isOpen, onClose, onCountUpdate }) => {
                   >
                     {isWarning ? (
                       <div className="notif-avatar notif-avatar-warning">⚠️</div>
+                    ) : isFlag ? (
+                      <div className="notif-avatar notif-avatar-flag">🚩</div>
                     ) : notif.senderPhoto ? (
                       <img src={notif.senderPhoto} alt="" className="notif-avatar" />
                     ) : (
@@ -177,6 +180,26 @@ const NotificationModal = ({ isOpen, onClose, onCountUpdate }) => {
                           {notif.warningText && (
                             <span className="notif-warning-text">
                               "{notif.warningText}"
+                            </span>
+                          )}
+                        </>
+                      )}
+                      {notif.type === 'post_flagged' && (
+                        <>
+                          flagged your post.
+                          {notif.flagReason && (
+                            <span className="notif-flag-text">
+                              "{notif.flagReason}"
+                            </span>
+                          )}
+                        </>
+                      )}
+                      {notif.type === 'comment_flagged' && (
+                        <>
+                          flagged your comment.
+                          {notif.flagReason && (
+                            <span className="notif-flag-text">
+                              "{notif.flagReason}"
                             </span>
                           )}
                         </>

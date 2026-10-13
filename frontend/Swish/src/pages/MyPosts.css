@@ -459,3 +459,38 @@
   background: #C4294D;
   color: #fff;
 }
+
+.flag-badge {
+  background: #FFE3E8;
+  color: #C4294D;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 3px 10px;
+  border-radius: 20px;
+  margin-left: auto;
+  margin-right: 8px;
+  white-space: nowrap;
+}
+
+.flag-badge-inline {
+  margin-left: 6px;
+  font-size: 12px;
+}
+
+.flag-reason-text {
+  font-size: 12px;
+  color: #C4294D;
+  font-style: italic;
+  padding: 4px 16px 0;
+  margin: 0;
+}
+
+.ig-comment-flag {
+  background: none;
+  border: none;
+  color: #C4294D;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+  margin-left: 8px;
+}

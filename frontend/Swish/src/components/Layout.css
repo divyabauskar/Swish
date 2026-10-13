@@ -504,4 +504,26 @@ html, body {
   color: #8C8494;
   background: #F0EAE1;
 }
-
+
+.notif-item.notif-flag {
+  background: #FFE3E8;
+}
+
+.notif-avatar-flag {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #FFC9D4;
+  font-size: 18px;
+  line-height: 1;
+  text-align: center;
+}
+
+.notif-flag-text {
+  display: block;
+  font-style: italic;
+  color: #C4294D;
+  font-size: 12px;
+  margin-top: 2px;
+  font-weight: 600;
+}
